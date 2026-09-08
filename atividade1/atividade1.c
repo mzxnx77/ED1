@@ -2,9 +2,9 @@
 #include <stdlib.h>
 #include <time.h>
 
-#define LARGURA_JANELA 800
-#define ALTURA_JANELA  600
-#define TAM_CELULA     40
+#define LARGURA 800
+#define ALTURA 600
+#define TAM 40
 
 typedef struct {
     Vector2 pos;
@@ -13,179 +13,130 @@ typedef struct {
     Color cor;
 } Bola;
 
-int **criarMatriz(int linhas, int colunas) {
-    int **matriz = (int **)malloc(linhas * sizeof(int *));
-
-    if (matriz == NULL) return NULL;
+int **criarMatriz(int linhas, int colunas)
+{
+    int **m = malloc(linhas * sizeof(int *));
 
     for (int i = 0; i < linhas; i++) {
-        matriz[i] = (int *)malloc(colunas * sizeof(int));
+        m[i] = malloc(colunas * sizeof(int));
 
         for (int j = 0; j < colunas; j++) {
-            matriz[i][j] = GetRandomValue(0, 1);
+            m[i][j] = GetRandomValue(0, 1);
         }
     }
 
-    return matriz;
+    return m;
 }
 
-void liberarMatriz(int **matriz, int linhas) {
+void liberarMatriz(int **m, int linhas)
+{
     for (int i = 0; i < linhas; i++) {
-        free(matriz[i]);
+        free(m[i]);
     }
 
-    free(matriz);
+    free(m);
 }
 
-void desenharMatriz(int **matriz, int linhas, int colunas) {
+void desenharMatriz(int **m, int linhas, int colunas)
+{
     for (int i = 0; i < linhas; i++) {
         for (int j = 0; j < colunas; j++) {
-            Color cor;
 
-            if (matriz[i][j] == 1) {
-                cor = (Color){20, 40, 70, 255};
-            } else {
-                cor = (Color){15, 30, 55, 255};
-            }
-
-            DrawRectangle(
-                j * TAM_CELULA,
-                i * TAM_CELULA,
-                TAM_CELULA - 2,
-                TAM_CELULA - 2,
-                cor
-            );
+            if (m[i][j] == 1)
+                DrawRectangle(j * TAM, i * TAM, TAM - 2, TAM - 2, DARKBLUE);
+            else
+                DrawRectangle(j * TAM, i * TAM, TAM - 2, TAM - 2, BLUE);
         }
     }
 }
 
-Bola *criarBolas(int quantidade) {
-    Bola *bolas = (Bola *)malloc(quantidade * sizeof(Bola));
+void criarBola(Bola *b)
+{
+    b->pos.x = GetRandomValue(50, LARGURA - 50);
+    b->pos.y = GetRandomValue(50, ALTURA - 50);
 
-    if (bolas == NULL) return NULL;
+    b->vel.x = GetRandomValue(-4, 4);
+    b->vel.y = GetRandomValue(-4, 4);
 
-    for (int i = 0; i < quantidade; i++) {
-        Bola *b = bolas + i;
+    b->raio = GetRandomValue(10, 25);
 
-        b->pos = (Vector2){
-            GetRandomValue(50, LARGURA_JANELA - 50),
-            GetRandomValue(50, ALTURA_JANELA - 50)
-        };
-
-        b->vel = (Vector2){
-            (float)GetRandomValue(-4, 4),
-            (float)GetRandomValue(-4, 4)
-        };
-
-        b->raio = (float)GetRandomValue(10, 25);
-
-        b->cor = (Color){
-            GetRandomValue(100, 255),
-            GetRandomValue(100, 255),
-            GetRandomValue(100, 255),
-            255
-        };
-    }
-
-    return bolas;
+    b->cor = (Color){
+        GetRandomValue(100, 255),
+        GetRandomValue(100, 255),
+        GetRandomValue(100, 255),
+        255
+    };
 }
 
-void atualizarBola(Bola *b) {
+void atualizarBola(Bola *b)
+{
     b->pos.x += b->vel.x;
     b->pos.y += b->vel.y;
 
     if (b->pos.x - b->raio < 0 ||
-        b->pos.x + b->raio > LARGURA_JANELA) {
+        b->pos.x + b->raio > LARGURA)
         b->vel.x *= -1;
-    }
 
     if (b->pos.y - b->raio < 0 ||
-        b->pos.y + b->raio > ALTURA_JANELA) {
+        b->pos.y + b->raio > ALTURA)
         b->vel.y *= -1;
-    }
 }
 
-int main(void) {
-    srand((unsigned int)time(NULL));
+int main()
+{
+    srand(time(NULL));
 
-    InitWindow(
-        LARGURA_JANELA,
-        ALTURA_JANELA,
-        "Ponteiros e Alocacao Dinamica - raylib"
-    );
+    InitWindow(LARGURA, ALTURA, "Bolas");
 
     SetTargetFPS(60);
 
-    int linhas = ALTURA_JANELA / TAM_CELULA;
-    int colunas = LARGURA_JANELA / TAM_CELULA;
+    int linhas = ALTURA / TAM;
+    int colunas = LARGURA / TAM;
 
     int **grade = criarMatriz(linhas, colunas);
 
-    int quantidadeBolas = 12;
+    int quantidade = 5;
 
-    Bola *bolas = criarBolas(quantidadeBolas);
+    Bola *bolas = malloc(quantidade * sizeof(Bola));
+
+    for (int i = 0; i < quantidade; i++) {
+        criarBola(&bolas[i]);
+    }
 
     while (!WindowShouldClose()) {
 
         if (IsKeyPressed(KEY_SPACE)) {
-            quantidadeBolas++;
 
-            bolas = realloc(
-                bolas,
-                quantidadeBolas * sizeof(Bola)
-            );
+            quantidade++;
 
-            Bola *b = &bolas[quantidadeBolas - 1];
+            bolas = realloc(bolas, quantidade * sizeof(Bola));
 
-            b->pos = (Vector2){
-                GetRandomValue(50, LARGURA_JANELA - 50),
-                GetRandomValue(50, ALTURA_JANELA - 50)
-            };
-
-            b->vel = (Vector2){
-                (float)GetRandomValue(-4, 4),
-                (float)GetRandomValue(-4, 4)
-            };
-
-            b->raio = (float)GetRandomValue(10, 25);
-
-            b->cor = (Color){
-                GetRandomValue(100, 255),
-                GetRandomValue(100, 255),
-                GetRandomValue(100, 255),
-                255
-            };
+            criarBola(&bolas[quantidade - 1]);
         }
 
-        if (IsKeyPressed(KEY_BACKSPACE) && quantidadeBolas > 0) {
-            quantidadeBolas--;
+        if (IsKeyPressed(KEY_BACKSPACE) && quantidade > 0) {
 
-            if (quantidadeBolas > 0) {
-                bolas = realloc(
-                    bolas,
-                    quantidadeBolas * sizeof(Bola)
-                );
-            } else {
+            quantidade--;
+
+            if (quantidade > 0)
+                bolas = realloc(bolas, quantidade * sizeof(Bola));
+            else {
                 free(bolas);
                 bolas = NULL;
             }
         }
 
-        for (int i = 0; i < quantidadeBolas; i++) {
-            atualizarBola(bolas + i);
+        for (int i = 0; i < quantidade; i++) {
+            atualizarBola(&bolas[i]);
         }
 
         BeginDrawing();
 
-        ClearBackground(RAYWHITE);
+        ClearBackground(BLACK);
 
-        desenharMatriz(
-            grade,
-            linhas,
-            colunas
-        );
+        desenharMatriz(grade, linhas, colunas);
 
-        for (int i = 0; i < quantidadeBolas; i++) {
+        for (int i = 0; i < quantidade; i++) {
             DrawCircleV(
                 bolas[i].pos,
                 bolas[i].raio,
@@ -194,29 +145,18 @@ int main(void) {
         }
 
         DrawText(
-            TextFormat(
-                "Quantidade de bolas: %d",
-                quantidadeBolas
-            ),
+            TextFormat("Bolas: %d", quantidade),
             10,
             10,
-            18,
+            20,
             WHITE
         );
 
         DrawText(
-            "ESPACO = adicionar | BACKSPACE = remover",
+            "ESPACO adiciona | BACKSPACE remove",
             10,
             35,
             18,
-            WHITE
-        );
-
-        DrawText(
-            "Pressione ESC para sair",
-            10,
-            ALTURA_JANELA - 25,
-            16,
             WHITE
         );
 
@@ -225,10 +165,7 @@ int main(void) {
 
     free(bolas);
 
-    liberarMatriz(
-        grade,
-        linhas
-    );
+    liberarMatriz(grade, linhas);
 
     CloseWindow();
 
